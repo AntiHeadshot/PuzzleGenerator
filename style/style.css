@@ -1,0 +1,60 @@
+#svgArea {
+    margin: 20px;
+}
+
+html {
+    background-color: whitesmoke;
+    overflow: hidden;
+    height: 100%;
+    width: 100%;
+}
+
+body {
+    overflow: hidden;
+    height: 100%;
+    width: 100%;
+    margin: 0;
+}
+
+#app {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    margin: 0;
+}
+
+#svgArea {
+    flex-grow: 1;
+}
+
+.darkmode {
+    background-color: #151515;
+    color: white;
+}
+
+.darkmode input {
+    filter: invert(1);
+}
+
+.darkmode svg {
+    filter: url(#invertBrightness);
+}
+
+.darkmode input[type="file"] {
+    color: black;
+}
+
+button {
+    border-radius: 4px;
+    border-color: #0075ff;
+    padding: 6px;
+}
+
+.darkmode button {
+    color: white;
+    background-color: #2b2b2b;
+    border-radius: 4px;
+    border-color: #ff8a00;
+    padding: 6px;
+}

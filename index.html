@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="de" class="darkmode">
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Puzzl0r</title>
+
+    <link rel="stylesheet" href="style/style.css" />
+
+    <script src="https://kit.fontawesome.com/1ddb58c3ae.js" crossorigin="anonymous"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.0.2/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/vue-router@4.0.12/dist/vue-router.global.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/seedrandom/3.0.5/seedrandom.min.js"></script>
+    <script src="https://requirejs.org/docs/release/2.3.5/minified/require.js"></script>
+    <script src="scripts/base64.js"></script>
+    <script type="module" src="scripts/svgPuzzle.js"></script>
+</head>
+
+<body>
+    <div id="app">
+        <div style="display:inline-block;">
+            <input type="checkbox" id="cbxDarkMode" v-model="darkMode" /><label for="cbxDarkMode">dark mode</label>
+            <br/>
+        </div>
+        <div id="parameterArea">
+            <div v-for="param in parameters.getList()">
+                <label>{{param.description}}
+                    <input type="number" v-model.number="param.value"/>
+                </label>
+            </div>
+        </div>
+        <div id="svgArea">
+            <svg style="display: none">
+                <filter id="invertBrightness">
+                    <feColorMatrix in="SourceGraphic" type="matrix" :values="`1 -1 -1 1 0
+                                                                              -1 1 -1 1 0
+                                                                              -1 -1 1 1 0
+                                                                              0 0 0 1 0`" />
+                </filter>
+            </svg>
+            <puzzle-renderer :parameters="parameters"/>
+        </div>
+    </div>
+    <!--no module, because not strict-->
+    <script type ="module" src="scripts/script.js"></script>
+</body>
+
+</html>
