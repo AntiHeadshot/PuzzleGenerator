@@ -1,4 +1,3 @@
-
 const svgNs = 'http://www.w3.org/2000/svg';
 
 class SvgElement {
@@ -16,9 +15,10 @@ class SvgElement {
     set fill(color) { this.elem.setAttribute('fill', color); }
     set fillOpacity(opacity) { this.elem.setAttribute('fill-opacity', opacity); }
     set strokeOpacity(opacity) { this.elem.setAttribute('stroke-opacity', opacity); }
+    set transform(transform) { this.elem.setAttribute('transform', transform); }
 }
 
-class PathCommand { }
+class PathCommand {}
 
 class AbsolutePathCommand extends PathCommand {
     constructor(x, y) {
@@ -125,6 +125,30 @@ export default {
          * @param {Number} value - Corner Radius Y
          */
         set ry(value) { this.elem.setAttribute('ry', value); }
+    },
+    Line: class Line extends SvgElement {
+        constructor() { super(); }
+
+        /**
+         * @param {Number} value - X Start Position
+         */
+        set x1(value) { this.elem.setAttribute('x1', value); }
+
+        /**
+         * @param {Number} value - Y Start Position
+         */
+        set y1(value) { this.elem.setAttribute('y1', value); }
+
+        /**
+         * @param {Number} value - X End Position
+         */
+        set x2(value) { this.elem.setAttribute('x2', value); }
+
+        /**
+         * @param {Number} value - Y End Position
+         */
+        set y2(value) { this.elem.setAttribute('y2', value); }
+
     },
     Text: class Text extends SvgElement {
         constructor() { super(); }

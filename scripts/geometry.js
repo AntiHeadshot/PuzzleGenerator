@@ -32,9 +32,26 @@ export class Edge {
 
 export class Point {
     constructor(x, y) {
-        this.x = x;
-        this.y = y;
-        this.length = Math.sqrt(x * x + y * y);
+        this._x = x;
+        this._y = y;
+    }
+
+    get length() {
+        if (!this._length)
+            this._length = Math.sqrt(this.x * this.x + this.y * this.y);
+        return this._length;
+    }
+
+    get x() { return this._x; }
+    set x(val) {
+        this._length = null;
+        this._x = val;
+    }
+
+    get y() { return this._y; }
+    set y(val) {
+        this._length = null;
+        this._y = val;
     }
 
     toString() {
@@ -59,6 +76,10 @@ export class Point {
 
     translate(d) {
         return new Point(this.x + d.x, this.y + d.y);
+    }
+
+    normal() {
+        return new Point(this.x / this.length, this.y / this.length);
     }
 
     scaleThis(f) {

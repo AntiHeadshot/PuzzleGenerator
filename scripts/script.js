@@ -54,6 +54,18 @@ app.component("puzzle-renderer", {
                 let xmlDoc = parser.parseFromString(renderedSvg, "text/xml");
 
                 xmlDoc.children[0].setAttribute("viewBox", viewBox);
+                //for export as 96 DPI Inkscape File
+                xmlDoc.children[0].setAttribute("width", bbox.width / 3.77952755906 + 'mm');
+                xmlDoc.children[0].setAttribute("height", bbox.height / 3.77952755906 + 'mm');
+
+                let serializer = new XMLSerializer();
+                renderedSvg = serializer.serializeToString(xmlDoc);
+            } else {
+                let parser = new DOMParser();
+                let xmlDoc = parser.parseFromString(renderedSvg, "text/xml");
+                //for export as 96 DPI Inkscape File
+                xmlDoc.children[0].setAttribute("width", this.parameters.width.value + 'mm');
+                xmlDoc.children[0].setAttribute("height", this.parameters.height.value + 'mm');
 
                 let serializer = new XMLSerializer();
                 renderedSvg = serializer.serializeToString(xmlDoc);

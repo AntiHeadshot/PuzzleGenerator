@@ -25,8 +25,9 @@
         </div>
         <div id="parameterArea">
             <div v-for="param in parameters.getList()">
-                <label>{{param.description}}
-                    <input type="number" v-model.number="param.value"/>
+                <label>
+                    {{param.description}}
+                    <input type="number" v-model.number="param.value" v-bind:min="param.min" :max="param.max" :step="param.stepSize"/>
                 </label>
             </div>
         </div>
@@ -39,11 +40,11 @@
                                                                               0 0 0 1 0`" />
                 </filter>
             </svg>
-            <puzzle-renderer :parameters="parameters"/>
+            <puzzle-renderer :parameters="parameters" />
         </div>
     </div>
     <!--no module, because not strict-->
-    <script type ="module" src="scripts/script.js"></script>
+    <script type="module" src="scripts/script.js"></script>
 </body>
 
 </html>
