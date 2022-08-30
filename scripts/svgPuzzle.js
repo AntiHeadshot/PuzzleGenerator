@@ -101,19 +101,17 @@ function perturb(grid) {
 
 function perturbPoint(x, y, point) {
     let offset = new Geomerty.Point(
-            parameters.simplex(
-                (point.x / parameters.width.value + x * 10 + parameters.noiseOffsetX.value) * parameters.noiseScale.value,
-                (point.y / parameters.height.value + parameters.noiseOffsetY.value) * parameters.noiseScale.value,
-                1) * parameters.piceWidth,
-            parameters.simplex(
-                (point.x / parameters.width.value + parameters.noiseOffsetX.value) * parameters.noiseScale.value,
-                (point.y / parameters.height.value + y * 10 + parameters.noiseOffsetY.value) * parameters.noiseScale.value,
-                1) * parameters.piceHeight)
+        parameters.simplex(
+            (point.x / parameters.width.value + x * 10 + parameters.noiseOffsetX.value) * parameters.noiseScale.value,
+            (point.y / parameters.height.value + parameters.noiseOffsetY.value) * parameters.noiseScale.value,
+            1) * parameters.piceWidth,
+        parameters.simplex(
+            (point.x / parameters.width.value + parameters.noiseOffsetX.value) * parameters.noiseScale.value,
+            (point.y / parameters.height.value + y * 10 + parameters.noiseOffsetY.value) * parameters.noiseScale.value,
+            1) * parameters.piceHeight)
         .scale(parameters.gridPerturb.value);
     return point.translate(offset);
 }
-
-function clamp(num, min, max) { return Math.min(Math.max(num, min), max); };
 
 function snapToBorder(x, y, point) {
     if (x == 0)
@@ -157,53 +155,15 @@ function createTongues(edges) {
             (edge.start.x == parameters.width.value && edge.end.x == parameters.width.value) ||
             (edge.start.y == parameters.height.value && edge.end.y == parameters.height.value);
         if (isEdge) {
-            let line = new SVG.Line();
-            line.x1 = edge.start.x;
-            line.y1 = edge.start.y;
-            line.x2 = edge.end.x;
-            line.y2 = edge.end.y;
+            let line = new SVG.Line(edge);
             tongues.push(line);
         } else {
-            let vEdge = edge.dir;
-            let vPerpN = new Geomerty.Point(vEdge.y, -vEdge.x).normal();
+            let tongue;
 
-            //Flip half of the time
-            if (Math.random() > 0.5)
-                vPerpN = vPerpN.scale(-1);
-
-            let toungRnd = Math.random() * (parameters.tongueHeightMax.value - parameters.tongueHeightMin.value);
-            let middleScale = vEdge.length * (parameters.tongueHeightMin.value + toungRnd);
-            //todo should be more like distance to edge in direction of tongue
-
-            let middlePosOffset = 0.4 + Math.random() * 0.2;
-
-            let middle = edge.start.translate(vEdge.scale(middlePosOffset)).translate(vPerpN.scale(middleScale));
-
-            let middleWidthFactor = 1 + Math.random() * 0.2;
-
-            let startFactor = 0.8 * middleWidthFactor;
-
-            let endFactor = 0.8 * middleWidthFactor;
-
-            let middleFactor = 0.4 * middleWidthFactor;
-
-            let startControl = edge.start.translate(vEdge.scale(startFactor));
-            let middleControl = middle.translate(vEdge.scale(-middleFactor));
-            let endControl = edge.end.translate(vEdge.scale(-endFactor));
-
-            //todo move start and end controll according to middlePosOffset
+            tongue = new BezierTongue(edge);
 
             let path = new SVG.Path();
-
-            var d = new SVG.Paths.PathCollection();
-
-            var absolute = SVG.Paths.Absolute;
-
-            d.add(new absolute.Move(edge.start.x, edge.start.y));
-            d.add(new absolute.CubicBezier(startControl.x, startControl.y, middleControl.x, middleControl.y, middle.x, middle.y));
-            d.add(new absolute.SmoothCubicBezier(endControl.x, endControl.y, edge.end.x, edge.end.y));
-
-            path.d = d.render();
+            path.d = tongue.render();
             tongues.push(path);
         }
     }
@@ -214,21 +174,63 @@ function createTongues(edges) {
 function addDebugPrints(svg, grid, edges) {
     for (const row of grid)
         for (const point of row) {
-            let circle = new SVG.Circle();
-            circle.cx = point.x;
-            circle.cy = point.y;
-            circle.r = '0.5';
+            let circle = new SVG.Circle(point,0.5);            
             circle.stroke = 'green';
             svg.add(circle);
         }
     for (const edge of edges) {
-        let line = new SVG.Line();
-        line.x1 = edge.start.x;
-        line.y1 = edge.start.y;
-        line.x2 = edge.end.x;
-        line.y2 = edge.end.y;
+        let line = new SVG.Line(edge);
         line.stroke = 'cyan';
         svg.add(line);
+    }
+}
+
+class Tongue {
+    constructor(edge) {
+        if (this.constructor === Tongue) {
+            throw new Error('Class "Tongue" cannot be instantiated')
+        }
+        this.edge = edge;
+    }
+
+    render() { throw new Error('Method "someMethod()" must be implemented.') }
+}
+
+class BezierTongue extends Tongue {
+    constructor(edge) { super(edge); }
+
+    render() {
+        let vEdge = this.edge.dir;
+        let vPerpN = new Geomerty.Point(vEdge.y, -vEdge.x).normal();
+
+        //Flip half of the time
+        if (Math.random() > 0.5)
+            vPerpN = vPerpN.scale(-1);
+
+        let toungRnd = Math.random() * (parameters.tongueHeightMax.value - parameters.tongueHeightMin.value);
+        let middleScale = vEdge.length * (parameters.tongueHeightMin.value + toungRnd);
+        //todo should be more like distance to edge in direction of tongue
+
+        let middlePosOffset = 0.4 + Math.random() * 0.2;
+
+        let middle = this.edge.start.translate(vEdge.scale(middlePosOffset)).translate(vPerpN.scale(middleScale));
+
+        let middleWidthFactor = 1 + Math.random() * 0.2;
+
+        let startControl = this.edge.start.translate(vEdge.scale(0.8 * middleWidthFactor));
+        let middleControl = middle.translate(vEdge.scale(-0.4 * middleWidthFactor));
+        let endControl = this.edge.end.translate(vEdge.scale(-0.8 * middleWidthFactor));
+        //todo move start and end controll according to middlePosOffset
+
+        var d = new SVG.Paths.PathCollection();
+
+        var absolute = SVG.Paths.Absolute;
+
+        d.add(new absolute.Move(this.edge.start));
+        d.add(new absolute.CubicBezier(startControl, middleControl, middle));
+        d.add(new absolute.SmoothCubicBezier(endControl, this.edge.end));
+
+        return d.render();
     }
 }
 

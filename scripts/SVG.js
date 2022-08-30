@@ -1,3 +1,5 @@
+import * as Geomerty from './geometry.js';
+
 const svgNs = 'http://www.w3.org/2000/svg';
 
 class SvgElement {
@@ -18,15 +20,22 @@ class SvgElement {
     set transform(transform) { this.elem.setAttribute('transform', transform); }
 }
 
-class PathCommand {}
+class PathCommand { }
 
 class AbsolutePathCommand extends PathCommand {
     constructor(x, y) {
         super();
         if (new.target === AbsolutePathCommand)
             throw TypeError("new of abstract class AbsolutePathCommand");
-        this.x = x;
-        this.y = y;
+
+        if (x instanceof Geomerty.Point) {
+            this.x = x.x;
+            this.y = x.y;
+        }
+        else {
+            this.x = x;
+            this.y = y;
+        }
     }
 }
 
@@ -35,14 +44,36 @@ class RelativePathCommand extends PathCommand {
         super();
         if (new.target === RelativePathCommand)
             throw TypeError("new of abstract class RelativePathCommand");
-        this.dx = dx;
-        this.dy = dy;
+
+        if (dx instanceof Geomerty.Point) {
+            this.dx = dx.x;
+            this.dy = dx.y;
+        }
+        else {
+            this.dx = dx;
+            this.dy = dy;
+        }
     }
 }
 
 export default {
     Svg: class Svg extends SvgElement {
-        constructor() { super(); }
+        constructor(element) {
+            super();
+
+            if (arguments.length == 1) {
+                if (Array.isArray(element)) {
+                    for (const elem of element) {
+                        this.add(elem);
+                    }
+                } else
+                    this.add(element);
+            } if (arguments.length > 1) {
+                for (const elem of arguments) {
+                    this.add(elem);
+                }
+            }
+        }
 
         /**
          * @param {Rectangle} value - viewBox Rectangle
@@ -76,7 +107,22 @@ export default {
         }
     },
     Circle: class Circle extends SvgElement {
-        constructor() { super(); }
+        constructor(cx, cy, r) {
+            super();
+            if (cx instanceof Geomerty.Point && r === undefined) {
+                this.cx = cx.x;
+                this.cy = cx.y;
+                if (cy !== undefined)
+                    this.r = cy;
+            } else {
+                if (cx !== undefined)
+                    this.cx = cx;
+                if (cy !== undefined)
+                    this.cy = cy;
+                if (r !== undefined)
+                    this.r = r;
+            }
+        }
 
         /**
          * @param {Number} value - Center X
@@ -94,7 +140,42 @@ export default {
         set r(value) { this.elem.setAttribute('r', value); }
     },
     Rect: class Rect extends SvgElement {
-        constructor() { super(); }
+        constructor(x, y, width, height, rx, ry) {
+            super();
+            if (x instanceof Geomerty.Point && ry === undefined) {
+                this.x = x.x;
+                this.y = x.y;
+                if (y instanceof Geomerty.Point && rx === undefined) {
+                    this.width = y.x;
+                    this.height = y.y;
+                    if (width !== undefined)
+                        this.rx = width;
+                    if (height !== undefined)
+                        this.ry = height;
+
+                } else {
+                    this.width = y;
+                    this.height = width;
+                    if (height !== undefined)
+                        this.rx = height;
+                    if (rx !== undefined)
+                        this.ry = rx;
+                }
+            } else {
+                if (x !== undefined)
+                    this.x = x;
+                if (y !== undefined)
+                    this.y = y;
+                if (width !== undefined)
+                    this.width = width;
+                if (height !== undefined)
+                    this.height = height;
+                if (rx !== undefined)
+                    this.rx = rx;
+                if (ry !== undefined)
+                    this.ry = ry;
+            }
+        }
 
         /**
          * @param {Number} value - X Position
@@ -127,7 +208,26 @@ export default {
         set ry(value) { this.elem.setAttribute('ry', value); }
     },
     Line: class Line extends SvgElement {
-        constructor() { super(); }
+        constructor(x1, y1, x2, y2) {
+            super();
+            if (x1 instanceof Geomerty.Edge && y1 === undefined) {
+                this.x1 = x1.start.x;
+                this.y1 = x1.start.y;
+                this.x2 = x1.end.x;
+                this.y2 = x1.end.y;
+            }
+            if (x1 instanceof Geomerty.Point && y1 instanceof Geomerty.Point & x2 === undefined) {
+                this.x1 = x1.x;
+                this.y1 = x1.y;
+                this.x2 = y1.x;
+                this.y2 = y1.y;
+            } else if (arguments.length == 4) {
+                this.x1 = x1;
+                this.y1 = y1;
+                this.x2 = x2;
+                this.y2 = y2;
+            }
+        }
 
         /**
          * @param {Number} value - X Start Position
@@ -151,7 +251,21 @@ export default {
 
     },
     Text: class Text extends SvgElement {
-        constructor() { super(); }
+        constructor(text, x, y) {
+            super();
+            if (text !== undefined) {
+                this.text = text;
+                if (x instanceof Geomerty.Point && y === undefined) {
+                    this.x = x.x;
+                    this.y = x.y;
+                } else {
+                    if (x !== undefined)
+                        this.x = x;
+                    if (y !== undefined)
+                        this.y = y;
+                }
+            }
+        }
 
         /**
          * @param {String} value - Text
@@ -190,7 +304,21 @@ export default {
 
     },
     Group: class Group extends SvgElement {
-        constructor() { super('g'); }
+        constructor(element) {
+            super('g');
+            if (arguments.length == 1) {
+                if (Array.isArray(element)) {
+                    for (const elem of element) {
+                        this.add(elem);
+                    }
+                } else
+                    this.add(element);
+            } if (arguments.length > 1) {
+                for (const elem of arguments) {
+                    this.add(elem);
+                }
+            }
+        }
 
         /**
          * @param {SvgElement} svgElement - element to add
@@ -239,52 +367,128 @@ export default {
             },
             CubicBezier: class CubicBezier extends AbsolutePathCommand {
                 /**
-                 * @param {Number} x1 - Start Controll Point X
-                 * @param {Number} y1 - Start Controll Point Y
-                 * @param {Number} x2 - End Controll Point X
-                 * @param {Number} y2 - End Controll Point Y
-                 * @param {Number} x - End Point X
-                 * @param {Number} y - End Point Y
+                 * @param {Number} x - Start Controll Point X
+                 * @param {Number} y - Start Controll Point Y
+                 * @param {Number} x1 - End Controll Point X
+                 * @param {Number} y1 - End Controll Point Y
+                 * @param {Number} x2 - End Point X
+                 * @param {Number} y2 - End Point Y
                  */
-                constructor(x1, y1, x2, y2, x, y) {
+                constructor(x, y, x1, y1, x2, y2) {
                     super(x, y);
-                    this.x1 = x1;
-                    this.y1 = y1;
-                    this.x2 = x2;
-                    this.y2 = y2;
+
+                    if (x instanceof Geomerty.Point && y2 === undefined) {
+                        if (y instanceof Geomerty.Point && x2 === undefined) {
+                            this.x1 = y.x;
+                            this.y1 = y.y;
+                            if (x1 instanceof Geomerty.Point && y1 === undefined) {
+                                this.x2 = x1.x;
+                                this.y2 = x1.y;
+                            } else {
+                                this.x2 = x1;
+                                this.y2 = y1;
+                            }
+                        } else {
+                            if (x1 instanceof Geomerty.Point && x2 === undefined) {
+                                this.x1 = y;
+                                this.y1 = x1;
+                                this.x2 = y1.x;
+                                this.y2 = y1.y;
+                            } else {
+                                this.x1 = y;
+                                this.y1 = x1;
+                                this.x2 = y1;
+                                this.y2 = x2;
+                            }
+                        }
+                    } else {
+                        if (x1 instanceof Geomerty.Point && y2 === undefined) {
+                            this.x1 = x1.x;
+                            this.y1 = x1.y;
+                            if (y1 instanceof Geomerty.Point && x2 === undefined) {
+                                this.x2 = y1.x;
+                                this.y2 = y1.y;
+                            } else {
+                                this.x2 = y1;
+                                this.y2 = x2;
+                            }
+                        } else {
+                            if (x2 instanceof Geomerty.Point && y2 === undefined) {
+                                this.x1 = x1;
+                                this.y1 = y1;
+                                this.x2 = x2.x;
+                                this.y2 = x2.y;
+                            } else {
+                                this.x1 = x1;
+                                this.y1 = y1;
+                                this.x2 = x2;
+                                this.y2 = y2;
+                            }
+                        }
+                    }
                 }
 
-                render() { return `C${this.x1} ${this.y1} ${this.x2} ${this.y2} ${this.x} ${this.y}`; }
+                render() { return `C${this.x} ${this.y} ${this.x1} ${this.y1} ${this.x2} ${this.y2}`; }
             },
             SmoothCubicBezier: class SmoothCubicBezier extends AbsolutePathCommand {
                 /**
-                 * @param {Number} x2 - End Controll Point X
-                 * @param {Number} y2 - End Controll Point Y
-                 * @param {Number} x - End Point X
-                 * @param {Number} y - End Point Y
+                 * @param {Number} x - End Controll Point X
+                 * @param {Number} y - End Controll Point Y
+                 * @param {Number} x2 - End Point X
+                 * @param {Number} y2 - End Point Y
                  */
-                constructor(x2, y2, x, y) {
+                constructor(x, y, x2, y2) {
                     super(x, y);
-                    this.x2 = x2;
-                    this.y2 = y2;
+                    if (x instanceof Geomerty.Point && y2 === undefined) {
+                        if (y instanceof Geomerty.Point && x2 === undefined) {
+                            this.x2 = y.x;
+                            this.y2 = y.y;
+                        } else {
+                            this.x2 = y;
+                            this.y2 = x2;
+                        }
+                    } else {
+                        if (x2 instanceof Geomerty.Point && y2 === undefined) {
+                            this.x2 = x2.x;
+                            this.y2 = x2.y;
+                        } else {
+                            this.x2 = x2;
+                            this.y2 = y2;
+                        }
+                    }
                 }
 
-                render() { return `S${this.x2} ${this.y2} ${this.x} ${this.y}`; }
+                render() { return `S${this.x} ${this.y} ${this.x2} ${this.y2}`; }
             },
             QuadraticBezier: class QuadraticBezier extends AbsolutePathCommand {
                 /**
-                 * @param {Number} x1 - Controll Point X
-                 * @param {Number} y1 - Controll Point Y
-                 * @param {Number} x - End Point X
-                 * @param {Number} y - End Point Y
+                 * @param {Number} x - Controll Point X
+                 * @param {Number} y - Controll Point Y
+                 * @param {Number} x1 - End Point X
+                 * @param {Number} y1 - End Point Y
                  */
-                constructor(x1, y1, x, y) {
+                constructor(x, y, x1, y1) {
                     super(x, y);
-                    this.x1 = x1;
-                    this.y1 = y1;
+                    if (x instanceof Geomerty.Point && y1 === undefined) {
+                        if (y instanceof Geomerty.Point && x1 === undefined) {
+                            this.x1 = y.x;
+                            this.y1 = y.y;
+                        } else {
+                            this.x1 = y;
+                            this.y1 = x1;
+                        }
+                    } else {
+                        if (x1 instanceof Geomerty.Point && y1 === undefined) {
+                            this.x1 = x1.x;
+                            this.y1 = x1.y;
+                        } else {
+                            this.x1 = x1;
+                            this.y1 = y1;
+                        }
+                    }
                 }
 
-                render() { return `Q${this.x1} ${this.y1} ${this.x} ${this.y}`; }
+                render() { return `Q${this.x} ${this.y} ${this.x1} ${this.y1}`; }
             },
             SmoothQuadraticBezier: class SmoothQuadraticBezier extends AbsolutePathCommand {
                 /**
@@ -308,15 +512,35 @@ export default {
                  * @param {Number} y - End Point Y
                  */
                 constructor(rx, ry, angle, largeArcFlag, isClockwise, x, y) {
-                    super(x, y);
-                    this.rx = rx;
-                    this.ry = ry;
-                    this.angle = angle;
-                    this.largeArcFlag = largeArcFlag;
-                    this.isClockwise = isClockwise;
+                    super(rx, ry);
+                    this.px = x;
+                    this.py = y;
+                    if (rx instanceof Geomerty.Point && y === undefined) {
+                        this.angle = ry;
+                        this.largeArcFlag = angle;
+                        this.isClockwise = largeArcFlag;
+                        if (isClockwise instanceof Geomerty.Point && x === undefined) {
+                            this.x1 = isClockwise.x;
+                            this.y1 = isClockwise.y;
+                        } else {
+                            this.x1 = isClockwise;
+                            this.y1 = x;
+                        }
+                    } else {
+                        this.angle = angle;
+                        this.largeArcFlag = largeArcFlag;
+                        this.isClockwise = isClockwise;
+                        if (x instanceof Geomerty.Point && y === undefined) {
+                            this.px = x.x
+                            this.py = x.y;
+                        } else {
+                            this.x1 = x1;
+                            this.y1 = y1;
+                        }
+                    }
                 }
 
-                render() { return `A${this.rx} ${this.ry} ${this.angle} ${this.largeArcFlag ? 1 : 0} ${this.isClockwise ? 1 : 0} ${this.x} ${this.y}`; }
+                render() { return `A${this.x} ${this.y} ${this.angle} ${this.largeArcFlag ? 1 : 0} ${this.isClockwise ? 1 : 0} ${this.px} ${this.py}`; }
             }
         },
         Relative: {
