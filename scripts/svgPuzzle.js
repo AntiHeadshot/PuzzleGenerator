@@ -146,6 +146,15 @@ function calculateEdges(grid) {
     return horizontals.concat(verticals);
 }
 
+function GetRestRnd(rnd, probability, call) {
+    if (rnd <= probability)
+    {
+        call();
+        return 1.1;
+    }
+    return (rnd - probability) * (1 / (1 - probability));
+}
+
 function createTongues(edges) {
     let tongues = [];
 
@@ -160,7 +169,12 @@ function createTongues(edges) {
         } else {
             let tongue;
 
-            tongue = new BezierTongue(edge);
+            let style = Math.random();
+
+            style = GetRestRnd(style, 0.9, () => tongue = new BezierTongue(edge));
+            style = GetRestRnd(style, 1 / 3, () => tongue = new BendTongue(edge));
+            style = GetRestRnd(style, 1 / 2, () => tongue = new PointyTongue(edge));
+            style = GetRestRnd(style, 1, () => tongue = new StreightTongue(edge));
 
             let path = new SVG.Path();
             path.d = tongue.render();
@@ -174,7 +188,7 @@ function createTongues(edges) {
 function addDebugPrints(svg, grid, edges) {
     for (const row of grid)
         for (const point of row) {
-            let circle = new SVG.Circle(point,0.5);            
+            let circle = new SVG.Circle(point, 0.5);
             circle.stroke = 'green';
             svg.add(circle);
         }
@@ -229,6 +243,82 @@ class BezierTongue extends Tongue {
         d.add(new absolute.Move(this.edge.start));
         d.add(new absolute.CubicBezier(startControl, middleControl, middle));
         d.add(new absolute.SmoothCubicBezier(endControl, this.edge.end));
+
+        return d.render();
+    }
+}
+
+class StreightTongue extends Tongue {
+    constructor(edge) { super(edge); }
+
+    render() {
+        var d = new SVG.Paths.PathCollection();
+
+        var absolute = SVG.Paths.Absolute;
+
+        d.add(new absolute.Move(this.edge.start));
+        d.add(new absolute.Line(this.edge.end));
+
+        return d.render();
+    }
+}
+
+class BendTongue extends Tongue {
+    constructor(edge) { super(edge); }
+
+    render() {
+        let vEdge = this.edge.dir;
+        let vPerpN = new Geomerty.Point(vEdge.y, -vEdge.x).normal();
+
+        //Flip half of the time
+        if (Math.random() > 0.5)
+            vPerpN = vPerpN.scale(-1);
+
+        let toungRnd = Math.random() * (parameters.tongueHeightMax.value - parameters.tongueHeightMin.value);
+        let middleScale = vEdge.length * (parameters.tongueHeightMin.value + toungRnd) * 0.7;
+        //todo should be more like distance to edge in direction of tongue
+
+        let middlePosOffset = 0.4 + Math.random() * 0.2;
+
+        let middle = this.edge.start.translate(vEdge.scale(middlePosOffset)).translate(vPerpN.scale(middleScale));
+
+        var d = new SVG.Paths.PathCollection();
+
+        var absolute = SVG.Paths.Absolute;
+
+        d.add(new absolute.Move(this.edge.start));
+        d.add(new absolute.CubicBezier(middle, middle, this.edge.end));
+
+        return d.render();
+    }
+}
+
+class PointyTongue extends Tongue {
+    constructor(edge) { super(edge); }
+
+    render() {
+        let vEdge = this.edge.dir;
+        let vPerpN = new Geomerty.Point(vEdge.y, -vEdge.x).normal();
+
+        //Flip half of the time
+        if (Math.random() > 0.5)
+            vPerpN = vPerpN.scale(-1);
+
+        let toungRnd = Math.random() * (parameters.tongueHeightMax.value - parameters.tongueHeightMin.value);
+        let middleScale = vEdge.length * (parameters.tongueHeightMin.value + toungRnd) * 0.7;
+        //todo should be more like distance to edge in direction of tongue
+
+        let middlePosOffset = 0.4 + Math.random() * 0.2;
+
+        let middle = this.edge.start.translate(vEdge.scale(middlePosOffset)).translate(vPerpN.scale(middleScale));
+
+        var d = new SVG.Paths.PathCollection();
+
+        var absolute = SVG.Paths.Absolute;
+
+        d.add(new absolute.Move(this.edge.start));
+        d.add(new absolute.Line(middle));
+        d.add(new absolute.Line(this.edge.end));
 
         return d.render();
     }
